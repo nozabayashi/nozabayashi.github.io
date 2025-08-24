@@ -1,0 +1,367 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ゴルフクラブ価格比較 – プロトタイプ</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <meta name="description" content="ゴルフクラブの価格を複数ショップで比較できるプロトタイプ。HTML+JSのみ。" />
+  <style>
+    /* カードのスケルトン用 */
+    .skeleton { position: relative; overflow: hidden; }
+    .skeleton::after { content: ""; position: absolute; inset: 0; transform: translateX(-100%); background: linear-gradient(90deg, transparent, rgba(255,255,255,.3), transparent); animation: load 1.2s infinite; }
+    @keyframes load { 100% { transform: translateX(100%); } }
+  </style>
+</head>
+<body class="bg-gray-50 text-gray-900">
+  <header class="sticky top-0 z-10 backdrop-blur supports-[backdrop-filter]:bg-white/70 bg-white/90 border-b">
+    <div class="max-w-6xl mx-auto px-4 py-4 flex items-center gap-4">
+      <div class="w-10 h-10 rounded-2xl bg-emerald-600 flex items-center justify-center text-white font-bold">G</div>
+      <div>
+        <h1 class="text-xl sm:text-2xl font-bold">ゴルフクラブ価格比較 <span class="text-sm font-medium text-gray-500">– Prototype</span></h1>
+        <p class="text-xs sm:text-sm text-gray-500">HTML + JavaScript（ローカルでそのまま動作）</p>
+      </div>
+      <div class="ms-auto flex items-center gap-2 text-xs sm:text-sm text-gray-500">
+        <a href="#" id="resetBtn" class="px-3 py-1.5 rounded-xl border hover:bg-gray-50">条件リセット</a>
+        <a href="#" id="seedBtn" class="px-3 py-1.5 rounded-xl border hover:bg-gray-50">データを再読込</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-6xl mx-auto p-4">
+    <!-- コントロールパネル -->
+    <section class="grid gap-3 sm:gap-4 sm:grid-cols-12 mb-4">
+      <div class="sm:col-span-5">
+        <label class="block text-sm font-medium text-gray-700 mb-1">キーワード検索</label>
+        <input id="q" type="search" placeholder="モデル名、ブランド、スペック…" class="w-full px-3 py-2 rounded-2xl border focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+      </div>
+      <div class="sm:col-span-3">
+        <label class="block text-sm font-medium text-gray-700 mb-1">ブランド</label>
+        <select id="brand" class="w-full px-3 py-2 rounded-2xl border bg-white">
+          <option value="">すべて</option>
+        </select>
+      </div>
+      <div class="sm:col-span-2">
+        <label class="block text-sm font-medium text-gray-700 mb-1">種類</label>
+        <select id="category" class="w-full px-3 py-2 rounded-2xl border bg-white">
+          <option value="">すべて</option>
+          <option>ドライバー</option>
+          <option>フェアウェイウッド</option>
+          <option>ユーティリティ</option>
+          <option>アイアン</option>
+          <option>ウェッジ</option>
+          <option>パター</option>
+        </select>
+      </div>
+      <div class="sm:col-span-2 grid grid-cols-2 gap-2">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">最小価格</label>
+          <input id="minPrice" type="number" min="0" inputmode="numeric" placeholder="0" class="w-full px-3 py-2 rounded-2xl border" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">最大価格</label>
+          <input id="maxPrice" type="number" min="0" inputmode="numeric" placeholder="100000" class="w-full px-3 py-2 rounded-2xl border" />
+        </div>
+      </div>
+      <div class="sm:col-span-12 md:col-span-3">
+        <label class="block text-sm font-medium text-gray-700 mb-1">並び替え</label>
+        <select id="sortBy" class="w-full px-3 py-2 rounded-2xl border bg-white">
+          <option value="price_asc">価格（安い順）</option>
+          <option value="price_desc">価格（高い順）</option>
+          <option value="name_asc">商品名（A→Z）</option>
+          <option value="name_desc">商品名（Z→A）</option>
+          <option value="brand_asc">ブランド（A→Z）</option>
+        </select>
+      </div>
+    </section>
+
+    <!-- 結果ヘッダー -->
+    <section class="mb-3 flex items-center justify-between">
+      <p id="resultMeta" class="text-sm text-gray-600">検索結果: 0件</p>
+      <div class="text-xs text-gray-500">プロトタイプ用ダミーデータ / 最安ショップを強調表示</div>
+    </section>
+
+    <!-- リスト -->
+    <section id="list" class="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+      <!-- JSで挿入 -->
+    </section>
+  </main>
+
+  <template id="cardTpl">
+    <article class="rounded-2xl bg-white border shadow-sm overflow-hidden hover:shadow-md transition-shadow">
+      <div class="aspect-[4/3] bg-gradient-to-br from-emerald-50 to-white flex items-center justify-center">
+        <!-- シンプルなアイコンSVG -->
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="w-16 h-16 opacity-70"><path fill="currentColor" d="M7 2v2h2v16a2 2 0 1 0 2 0V4h2V2zM5 7a7 7 0 0 0 7 7v-2a5 5 0 0 1-5-5z"/></svg>
+      </div>
+      <div class="p-4">
+        <h3 class="font-semibold leading-tight mb-1"></h3>
+        <p class="text-sm text-gray-500 mb-3"></p>
+        <div class="flex items-baseline gap-2 mb-3">
+          <span class="text-2xl font-bold text-emerald-700"></span>
+          <span class="text-xs text-gray-500"></span>
+        </div>
+        <div class="space-y-1" data-shops></div>
+        <div class="mt-3 flex items-center justify-between text-xs text-gray-500">
+          <span class="rounded-full bg-emerald-50 text-emerald-700 px-2 py-1" data-badge>最安</span>
+          <a target="_blank" rel="noopener" class="underline underline-offset-2">最安ショップへ</a>
+        </div>
+      </div>
+    </article>
+  </template>
+
+  <script>
+    // ---- ダミーデータ（必要に応じて自由に編集） ----
+    const SEED = [
+      {
+        id: 1,
+        name: "SIM2 Max ドライバー 10.5°",
+        brand: "TaylorMade",
+        category: "ドライバー",
+        specs: { loft: "10.5°", shaft: "S" },
+        shops: [
+          { name: "楽天市場A店", price: 43800, url: "https://example.com/rakuten-a" },
+          { name: "Yahoo!B店", price: 45980, url: "https://example.com/yahoo-b" },
+          { name: "公式アウトレット", price: 49800, url: "https://example.com/official-outlet" },
+        ],
+      },
+      {
+        id: 2,
+        name: "G430 MAX ドライバー 9.0°",
+        brand: "PING",
+        category: "ドライバー",
+        specs: { loft: "9.0°", shaft: "SR" },
+        shops: [
+          { name: "楽天市場A店", price: 64800, url: "https://example.com/rakuten-a2" },
+          { name: "Yahoo!C店", price: 63500, url: "https://example.com/yahoo-c" },
+        ],
+      },
+      {
+        id: 3,
+        name: "STEALTH 2 HD フェアウェイ 5W",
+        brand: "TaylorMade",
+        category: "フェアウェイウッド",
+        specs: { loft: "18°", shaft: "R" },
+        shops: [
+          { name: "Amazon出品", price: 29800, url: "https://example.com/amazon" },
+          { name: "中古ショップ", price: 24800, url: "https://example.com/used" },
+        ],
+      },
+      {
+        id: 4,
+        name: "DUNLOP XXIO 12 アイアン 5-PW（6本）",
+        brand: "DUNLOP",
+        category: "アイアン",
+        specs: { shaft: "R" },
+        shops: [
+          { name: "ゴルフ専門店", price: 89800, url: "https://example.com/pro" },
+          { name: "楽天市場D店", price: 85800, url: "https://example.com/rakuten-d" },
+          { name: "Yahoo!E店", price: 91200, url: "https://example.com/yahoo-e" },
+        ],
+      },
+      {
+        id: 5,
+        name: "Callaway JAWS RAW ウェッジ 56°",
+        brand: "Callaway",
+        category: "ウェッジ",
+        specs: { loft: "56°", bounce: "12°" },
+        shops: [
+          { name: "楽天市場F店", price: 14800, url: "https://example.com/rakuten-f" },
+          { name: "ゴルフ量販店", price: 15800, url: "https://example.com/mass" },
+        ],
+      },
+      {
+        id: 6,
+        name: "Odyssey WHITE HOT OG パター #7",
+        brand: "Odyssey",
+        category: "パター",
+        specs: { length: "34inch" },
+        shops: [
+          { name: "公式ストア", price: 22800, url: "https://example.com/official-p" },
+          { name: "Amazon出品", price: 21900, url: "https://example.com/amazon-p" },
+        ],
+      },
+      {
+        id: 7,
+        name: "Titleist TSi2 ユーティリティ 21°",
+        brand: "Titleist",
+        category: "ユーティリティ",
+        specs: { loft: "21°", shaft: "S" },
+        shops: [
+          { name: "中古ショップ", price: 19800, url: "https://example.com/used-tsi2" },
+          { name: "楽天市場H店", price: 23800, url: "https://example.com/rakuten-h" },
+        ],
+      },
+    ];
+
+    // ---- 状態管理 ----
+    let PRODUCTS = JSON.parse(localStorage.getItem("golf_seed") || "null") || SEED;
+
+    const el = {
+      list: document.getElementById('list'),
+      meta: document.getElementById('resultMeta'),
+      q: document.getElementById('q'),
+      brand: document.getElementById('brand'),
+      category: document.getElementById('category'),
+      minPrice: document.getElementById('minPrice'),
+      maxPrice: document.getElementById('maxPrice'),
+      sortBy: document.getElementById('sortBy'),
+      resetBtn: document.getElementById('resetBtn'),
+      seedBtn: document.getElementById('seedBtn'),
+      cardTpl: document.getElementById('cardTpl')
+    };
+
+    const yen = n => n.toLocaleString('ja-JP', { style: 'currency', currency: 'JPY' });
+
+    function uniqueBrands(list){
+      return Array.from(new Set(list.map(p => p.brand))).sort();
+    }
+
+    function populateBrandOptions(){
+      const brands = uniqueBrands(PRODUCTS);
+      for(const b of brands){
+        const opt = document.createElement('option');
+        opt.value = b; opt.textContent = b; el.brand.appendChild(opt);
+      }
+    }
+
+    function lowestShop(shops){
+      return shops.reduce((min, s) => s.price < min.price ? s : min, shops[0]);
+    }
+
+    function getFilters(){
+      const q = el.q.value.trim().toLowerCase();
+      const brand = el.brand.value;
+      const category = el.category.value;
+      const minPrice = Number(el.minPrice.value || 0);
+      const maxPrice = Number(el.maxPrice.value || Infinity);
+      const sortBy = el.sortBy.value;
+      return { q, brand, category, minPrice, maxPrice, sortBy };
+    }
+
+    function filterItems(items, f){
+      return items.filter(p => {
+        const text = `${p.name} ${p.brand} ${p.category} ${JSON.stringify(p.specs)}`.toLowerCase();
+        const price = lowestShop(p.shops).price;
+        return (!f.q || text.includes(f.q))
+          && (!f.brand || p.brand === f.brand)
+          && (!f.category || p.category === f.category)
+          && price >= f.minPrice && price <= f.maxPrice;
+      });
+    }
+
+    function sortItems(items, sortBy){
+      const arr = [...items];
+      switch(sortBy){
+        case 'price_desc':
+          return arr.sort((a,b) => lowestShop(b.shops).price - lowestShop(a.shops).price);
+        case 'name_asc':
+          return arr.sort((a,b) => a.name.localeCompare(b.name));
+        case 'name_desc':
+          return arr.sort((a,b) => b.name.localeCompare(a.name));
+        case 'brand_asc':
+          return arr.sort((a,b) => a.brand.localeCompare(b.brand));
+        case 'price_asc':
+        default:
+          return arr.sort((a,b) => lowestShop(a.shops).price - lowestShop(b.shops).price);
+      }
+    }
+
+    function render(items){
+      el.list.innerHTML = '';
+      if(items.length === 0){
+        el.meta.textContent = '検索結果: 0件';
+        const div = document.createElement('div');
+        div.className = 'col-span-full text-center text-gray-500 py-16';
+        div.innerHTML = '条件に一致する商品がありません。条件を変更してください。';
+        el.list.appendChild(div);
+        return;
+      }
+      el.meta.textContent = `検索結果: ${items.length}件`;
+
+      for(const p of items){
+        const card = el.cardTpl.content.cloneNode(true);
+        const h3 = card.querySelector('h3');
+        const sub = card.querySelector('p');
+        const priceEl = card.querySelector('.text-2xl');
+        const subPrice = card.querySelector('.text-xs');
+        const shopsEl = card.querySelector('[data-shops]');
+        const linkEl = card.querySelector('a[rel="noopener"]');
+
+        const low = lowestShop(p.shops);
+
+        h3.textContent = p.name;
+        sub.textContent = `${p.brand} ・ ${p.category}`;
+        priceEl.textContent = yen(low.price);
+        subPrice.textContent = `最安: ${low.name}`;
+        linkEl.href = low.url;
+
+        // ショップ一覧
+        p.shops
+          .slice()
+          .sort((a,b) => a.price - b.price)
+          .forEach(s => {
+            const row = document.createElement('div');
+            row.className = 'flex items-center justify-between text-sm';
+            row.innerHTML = `<span class="truncate">${s.name}</span><span class="font-medium">${yen(s.price)}</span>`;
+            shopsEl.appendChild(row);
+          });
+
+        el.list.appendChild(card);
+      }
+    }
+
+    // --- イベント ---
+    const trigger = () => {
+      const f = getFilters();
+      const filtered = filterItems(PRODUCTS, f);
+      const sorted = sortItems(filtered, f.sortBy);
+      render(sorted);
+    };
+
+    function debounce(fn, ms){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), ms); }; }
+
+    ;['q','brand','category','minPrice','maxPrice','sortBy'].forEach(id => {
+      const target = el[id];
+      const handler = id === 'q' ? debounce(trigger, 200) : trigger;
+      target.addEventListener('input', handler);
+      target.addEventListener('change', handler);
+    });
+
+    el.resetBtn.addEventListener('click', (e)=>{
+      e.preventDefault();
+      el.q.value = '';
+      el.brand.value = '';
+      el.category.value = '';
+      el.minPrice.value = '';
+      el.maxPrice.value = '';
+      el.sortBy.value = 'price_asc';
+      trigger();
+    });
+
+    el.seedBtn.addEventListener('click', (e)=>{
+      e.preventDefault();
+      localStorage.removeItem('golf_seed');
+      PRODUCTS = SEED;
+      if(!document.getElementById('brand').querySelector('option[value="TaylorMade"]')){
+        // 初回以外はブランドが重複しないよう簡易対策
+        el.brand.innerHTML = '<option value="">すべて</option>';
+        populateBrandOptions();
+      }
+      trigger();
+    });
+
+    // --- 初期化 ---
+    (function init(){
+      // 初回のみブランドの選択肢を投入
+      populateBrandOptions();
+      // ローカルストレージへ保存（編集して残せる）
+      localStorage.setItem('golf_seed', JSON.stringify(PRODUCTS));
+      trigger();
+    })();
+  </script>
+
+  <footer class="max-w-6xl mx-auto px-4 pb-10 pt-6 text-xs text-gray-500">
+    <p>※ 本ページはデモ用です。価格・リンクはダミーです。実運用時は各モールAPIの規約を遵守してください。</p>
+  </footer>
+</body>
+</html>
